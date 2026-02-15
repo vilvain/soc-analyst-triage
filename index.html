@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOC Analyst Triage Challenge</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #0d1a0d 50%, #111111 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 18px;
+            transform: scale(0.9);
+            transform-origin: top center;
+        }
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* Start Screen */
+        #startScreen {
+            position: relative;
+            text-align: center;
+            padding-top: 10px;
+        }
+        .start-main {
+            text-align: center;
+        }
+        .logo {
+            max-width: 280px;
+            height: auto;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 20px rgba(34,197,94,0.4));
+        }
+        .logo-small {
+            max-width: 150px;
+            margin-bottom: 5px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(34,197,94,0.5);
+        }
+        .subtitle {
+            color: #9ca3af;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        .name-label {
+            display: block;
+            font-size: 0.9rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+        .rules-box {
+            margin: 15px auto;
+            max-width: 600px;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(100, 116, 139, 0.25);
+            border-radius: 10px;
+            padding: 12px 24px;
+            columns: 2;
+            column-gap: 24px;
+        }
+        .rules-box h3 {
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            column-span: all;
+        }
+        .rules-box ul {
+            margin: 0;
+            padding-left: 18px;
+            list-style: none;
+        }
+        .rules-box li {
+            position: relative;
+            padding-left: 8px;
+            margin-bottom: 4px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            line-height: 1.35;
+            break-inside: avoid;
+        }
+        .rules-box li::before {
+            content: '>';
+            position: absolute;
+            left: -14px;
+            color: #00ff88;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .rules-box strong {
+            color: #e2e8f0;
+        }
+        #nameInput {
+            padding: 15px 25px;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            background: rgba(0, 255, 136, 0.06);
+            color: #00ff88;
+            width: 320px;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s;
+            text-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+        }
+        #nameInput::placeholder {
+            color: rgba(0, 255, 136, 0.35);
+            text-shadow: none;
+        }
+        #nameInput:focus {
+            border-color: #4ade80;
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.4), inset 0 0 15px rgba(0, 255, 136, 0.05);
+            text-shadow: 0 0 12px rgba(0, 255, 136, 0.8);
+        }
+        #startBtn {
+            display: block;
+            margin: 20px auto;
+            padding: 15px 50px;
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #startBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(34,197,94,0.6);
+        }
+
+        /* Game Screen */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .timer {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #10b981;
+            text-shadow: 0 0 10px rgba(16,185,129,0.5);
+        }
+        .timer.warning { color: #f59e0b; }
+        .timer.danger { color: #ef4444; animation: pulse 0.5s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .player-name {
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            color: #00ff88;
+            text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+        }
+        .question-counter {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* Meters */
+        .meters {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .meter {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .meter-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .meter-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        .meter-noise .meter-value { color: #fbbf24; }
+        .meter-damage .meter-value { color: #ef4444; }
+        .meter-risk .meter-value { color: #f97316; }
+        .meter-career .meter-value { color: #10b981; }
+
+        /* Card Container - fixed height to keep buttons in place */
+        .card-container {
+            position: relative;
+            height: 320px;
+            margin-bottom: 30px;
+            overflow-y: auto;
+        }
+
+        /* Alert Card */
+        .alert-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 30px;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .alert-icon {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+        .alert-text {
+            font-size: 1.3rem;
+            line-height: 1.5;
+        }
+
+        /* Action Buttons */
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        .action-btn {
+            padding: 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+        .action-btn.clicked {
+            animation: buttonClick 0.3s ease-out;
+        }
+        @keyframes buttonClick {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        .btn-ignore {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(107, 114, 128, 0.3);
+            animation: ignorePulse 2s ease-in-out infinite;
+        }
+        @keyframes ignorePulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(107, 114, 128, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(107, 114, 128, 0.5); }
+        }
+        .btn-ignore:hover {
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+            box-shadow: 0 0 30px rgba(107, 114, 128, 0.6);
+            animation: none;
+        }
+        .btn-escalate {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+            animation: escalatePulse 2s ease-in-out infinite;
+        }
+        @keyframes escalatePulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(34, 197, 94, 0.5); }
+        }
+        .btn-escalate:hover {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+            animation: none;
+        }
+        .btn-mitigate {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+            animation: mitigatePulse 2s ease-in-out infinite;
+        }
+        @keyframes mitigatePulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.5); }
+        }
+        .btn-mitigate:hover {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.6);
+            animation: none;
+        }
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Results Screen */
+        #resultsScreen { text-align: center; padding-top: 10px; }
+        .result-subtitle {
+            color: #f87171;
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+        .final-score {
+            font-size: 4rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #22c55e, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 20px 0;
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        .stat {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 25px;
+            border-radius: 10px;
+        }
+        .stat-label { color: #94a3b8; font-size: 0.9rem; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; }
+
+        /* Leaderboard */
+        .leaderboard {
+            margin-top: 40px;
+            text-align: left;
+        }
+        .leaderboard h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #22c55e;
+        }
+        .start-leaderboard {
+            position: fixed;
+            right: calc(50% - 360px - 240px - 50px);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 240px;
+            text-align: left;
+            margin-top: 0;
+        }
+        .start-leaderboard h2 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+        }
+        .start-leaderboard .leaderboard-entry {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+        }
+        .start-leaderboard .rank {
+            font-size: 1.15rem;
+            width: 28px;
+        }
+        .start-leaderboard .entry-name {
+            font-size: 0.95rem;
+            margin-left: 10px;
+        }
+        .start-leaderboard .entry-score {
+            font-size: 0.9rem;
+        }
+        .leaderboard-stats {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.85rem;
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .leaderboard-stats .stat-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .leaderboard-stats .stat-val {
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+        @media (max-width: 1100px) {
+            .start-leaderboard {
+                display: none;
+            }
+        }
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        .leaderboard-entry:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .leaderboard-entry.highlight {
+            background: rgba(34,197,94,0.2);
+            border: 1px solid #22c55e;
+        }
+        .rank {
+            font-size: 1.5rem;
+            font-weight: bold;
+            width: 40px;
+        }
+        .rank.gold { color: #fbbf24; }
+        .rank.silver { color: #94a3b8; }
+        .rank.bronze { color: #cd7f32; }
+        .entry-name { flex: 1; margin-left: 15px; }
+        .entry-score { font-weight: bold; color: #10b981; }
+        .entry-questions { color: #94a3b8; margin-left: 20px; }
+
+        #playAgainBtn {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #playAgainBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(34,197,94,0.5);
+        }
+
+        /* Explanation Overlay */
+        .explanation-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            cursor: pointer;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .explanation-overlay.visible { display: flex; align-items: center; justify-content: center; }
+        .explanation-card {
+            background: rgba(10,15,10,0.95);
+            border: 2px solid #22c55e;
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 600px;
+            width: 100%;
+            animation: popIn 0.2s ease-out;
+            cursor: default;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .explanation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .explanation-action {
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .explanation-action.action-ignore { color: #9ca3af; }
+        .explanation-action.action-escalate { color: #4ade80; }
+        .explanation-action.action-mitigate { color: #fbbf24; }
+        .explanation-hint {
+            color: #64748b;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+        .explanation-section { margin-bottom: 15px; }
+        .explanation-label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .explanation-text {
+            color: #fff;
+            line-height: 1.5;
+        }
+        .explanation-scores {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        .score-change {
+            text-align: center;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            min-width: 70px;
+        }
+        .score-change-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .score-change-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        .score-change-value.positive { color: #10b981; }
+        .score-change-value.negative { color: #ef4444; }
+        .score-change-value.neutral { color: #6b7280; }
+        .score-change-why {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-top: 5px;
+            line-height: 1.3;
+        }
+
+        /* Distraction Overlay */
+        .distraction-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1001;
+            padding: 20px;
+        }
+        .distraction-overlay.visible { display: flex; align-items: center; justify-content: center; }
+        .distraction-card {
+            background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
+            border: 2px solid #ef4444;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            animation: shake 0.5s ease-out;
+            text-align: center;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-10px); }
+            40% { transform: translateX(10px); }
+            60% { transform: translateX(-10px); }
+            80% { transform: translateX(10px); }
+        }
+        .distraction-badge {
+            display: inline-block;
+            background: #ef4444;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            animation: pulse 1s infinite;
+        }
+        .distraction-from {
+            color: #9ca3af;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        .distraction-message {
+            font-size: 1.2rem;
+            line-height: 1.5;
+            margin-bottom: 25px;
+            color: #fff;
+        }
+        .distraction-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .distraction-btn {
+            padding: 12px 20px;
+            font-size: 1rem;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .distraction-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: #22c55e;
+        }
+        .distraction-timer-warning {
+            color: #ef4444;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        /* Study Button */
+        .study-container {
+            text-align: right;
+            margin-bottom: 10px;
+        }
+        .study-btn {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #1a3a1a, #0d2a0d);
+            border: 2px solid #22c55e;
+            border-radius: 8px;
+            color: #4ade80;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+            animation: studyPulse 2s ease-in-out infinite;
+        }
+        @keyframes studyPulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(34, 197, 94, 0.5); }
+        }
+        .study-btn:hover {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff;
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+            animation: none;
+        }
+        .study-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            animation: none;
+        }
+
+        /* Study Overlay */
+        .study-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .study-overlay.visible { display: flex; align-items: center; justify-content: center; }
+        .study-card {
+            background: linear-gradient(135deg, #0d1a0d, #0a0a0a);
+            border: 2px solid #22c55e;
+            border-radius: 15px;
+            padding: 20px 25px;
+            max-width: 900px;
+            width: 95%;
+            max-height: 80vh;
+            overflow-y: auto;
+            cursor: default;
+        }
+        .study-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(34,197,94,0.3);
+        }
+        .study-title {
+            color: #22c55e;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .study-timer-warning {
+            color: #ef4444;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+        .study-content {
+            color: #d1d5db;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            margin-bottom: 15px;
+        }
+        .study-close-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .study-close-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(34,197,94,0.4);
+        }
+
+        /* Floating Action Hints */
+        .action-hints-panel {
+            position: fixed;
+            left: calc(50% - 360px - 240px);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 220px;
+            background: rgba(10,15,10,0.95);
+            border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 10px;
+            padding: 12px;
+            z-index: 100;
+        }
+        .action-hints-panel h3 {
+            color: #22c55e;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .hint-item {
+            margin-bottom: 8px;
+            padding: 6px 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 5px;
+            border-left: 3px solid #6b7280;
+        }
+        .hint-item:last-child { margin-bottom: 0; }
+        .hint-action {
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-bottom: 3px;
+        }
+        .hint-action.hint-ignore { color: #9ca3af; }
+        .hint-action.hint-escalate { color: #4ade80; }
+        .hint-action.hint-mitigate { color: #fbbf24; }
+        .hint-text {
+            color: #9ca3af;
+            font-size: 0.75rem;
+            line-height: 1.3;
+        }
+        @media (max-width: 1100px) {
+            .action-hints-panel { display: none; }
+        }
+
+        /* Floating effects */
+        .float-effect {
+            position: fixed;
+            pointer-events: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            animation: floatUp 1s ease-out forwards;
+            z-index: 100;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+        .float-positive { color: #10b981; }
+        .float-negative { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Start Screen -->
+        <div id="startScreen" class="screen active">
+            <div class="start-main">
+                <img src="satc.png" alt="SOC Analyst Triage Challenge" class="logo">
+                <p class="subtitle">Limited time. Endless alerts. What could go wrong?</p>
+                <label for="nameInput" class="name-label">Enter your name</label>
+                <input type="text" id="nameInput" placeholder="Enter your name" maxlength="20">
+                <div class="rules-box">
+                    <h3>How to Play</h3>
+                    <ul>
+                        <li>You have <strong>60 seconds</strong> to triage as many security alerts as possible</li>
+                        <li>For each alert, choose to <strong>Ignore</strong>, <strong>Escalate</strong>, or <strong>Mitigate</strong></li>
+                        <li>Your choices affect 4 meters: <strong>Noise</strong>, <strong>Damage</strong>, <strong>Risk</strong>, and <strong>Career</strong></li>
+                        <li>If any meter drops to <strong>-10</strong>, it's game over</li>
+                        <li>Keep your <strong>Career</strong> meter high and the rest low to maximize your score</li>
+                        <li>Watch out for <strong>distractions</strong> — they'll test your multitasking skills</li>
+                    </ul>
+                </div>
+                <button id="startBtn">START GAME</button>
+            </div>
+
+            <div class="action-hints-panel">
+                <h3>Action Hints</h3>
+                <div class="hint-item">
+                    <div class="hint-action hint-ignore">IGNORE</div>
+                    <div class="hint-text">Low priority alerts that don't require action</div>
+                </div>
+                <div class="hint-item">
+                    <div class="hint-action hint-escalate">ESCALATE</div>
+                    <div class="hint-text">Serious threats requiring senior analyst review</div>
+                </div>
+                <div class="hint-item">
+                    <div class="hint-action hint-mitigate">MITIGATE</div>
+                    <div class="hint-text">Take immediate action to contain the threat</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="screen">
+            <div class="header">
+                <div class="timer" id="timer">60</div>
+                <div class="player-name" id="playerDisplay"></div>
+                <div class="question-counter" id="questionCounter">Alert 1</div>
+            </div>
+
+            <div class="meters">
+                <div class="meter meter-noise">
+                    <div class="meter-label">Noise</div>
+                    <div class="meter-value" id="meterNoise">0</div>
+                </div>
+                <div class="meter meter-damage">
+                    <div class="meter-label">Damage</div>
+                    <div class="meter-value" id="meterDamage">0</div>
+                </div>
+                <div class="meter meter-risk">
+                    <div class="meter-label">Risk</div>
+                    <div class="meter-value" id="meterRisk">0</div>
+                </div>
+                <div class="meter meter-career">
+                    <div class="meter-label">Career</div>
+                    <div class="meter-value" id="meterCareer">0</div>
+                </div>
+            </div>
+
+            <div class="study-container">
+                <button class="study-btn" id="studyBtn">📖 Study Alert</button>
+            </div>
+
+            <div class="card-container">
+                <div class="alert-card" id="alertCard">
+                    <div class="alert-icon">&#9888;</div>
+                    <div class="alert-text" id="alertText"></div>
+                </div>
+            </div>
+
+            <div class="distraction-overlay" id="distractionOverlay">
+                <div class="distraction-card">
+                    <div class="distraction-badge">URGENT</div>
+                    <div class="distraction-from" id="distractionFrom"></div>
+                    <div class="distraction-message" id="distractionMessage"></div>
+                    <div class="distraction-options" id="distractionOptions"></div>
+                    <div class="distraction-timer-warning">(The clock is still ticking...)</div>
+                </div>
+            </div>
+
+            <div class="explanation-overlay" id="explanationOverlay">
+                <div class="explanation-card" id="explanationCard">
+                <div class="explanation-header">
+                    <span class="explanation-action" id="explanationAction"></span>
+                    <span class="explanation-hint">Click anywhere to continue</span>
+                </div>
+                <div class="explanation-section">
+                    <div class="explanation-label">What you did:</div>
+                    <div class="explanation-text" id="expWhatYouDid"></div>
+                </div>
+                <div class="explanation-section">
+                    <div class="explanation-label">What was probably happening:</div>
+                    <div class="explanation-text" id="expWhatHappening"></div>
+                </div>
+                <div class="explanation-section">
+                    <div class="explanation-label">What it caused:</div>
+                    <div class="explanation-text" id="expWhatCaused"></div>
+                </div>
+                <div class="explanation-scores" id="expScores"></div>
+                </div>
+            </div>
+
+            <div class="action-hints-panel" id="actionHintsPanel">
+                <h3>Action Hints</h3>
+                <div id="hintsContent"></div>
+            </div>
+
+            <div class="actions">
+                <button class="action-btn btn-ignore" data-action="IGNORE">Ignore</button>
+                <button class="action-btn btn-escalate" data-action="ESCALATE">Escalate</button>
+                <button class="action-btn btn-mitigate" data-action="MITIGATE">Mitigate</button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="resultsScreen" class="screen">
+            <img src="satc.png" alt="SOC Analyst Triage Challenge" class="logo logo-small">
+            <h1 id="resultTitle">Time's Up!</h1>
+            <p id="resultSubtitle" class="result-subtitle"></p>
+            <div class="final-score" id="finalScore">0</div>
+            <p>alerts handled</p>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Noise</div>
+                    <div class="stat-value" id="finalNoise">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Damage</div>
+                    <div class="stat-value" id="finalDamage">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Risk</div>
+                    <div class="stat-value" id="finalRisk">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Career</div>
+                    <div class="stat-value" id="finalCareer">0</div>
+                </div>
+            </div>
+
+            <div class="leaderboard">
+                <h2>Leaderboard</h2>
+                <div id="leaderboardList"></div>
+                <div class="leaderboard-stats" id="resultsStats"></div>
+            </div>
+
+            <button id="playAgainBtn">Play Again</button>
+        </div>
+
+        <div class="leaderboard start-leaderboard">
+            <h2>Top Analysts</h2>
+            <div id="startLeaderboardList"></div>
+            <div class="leaderboard-stats" id="startStats"></div>
+        </div>
+    </div>
+
+    <div class="study-overlay" id="studyOverlay">
+        <div class="study-card">
+            <div class="study-header">
+                <span class="study-title">📖 Studying Alert...</span>
+                <span class="study-timer-warning">⏱ <span id="studyTimer">60</span>s remaining</span>
+            </div>
+            <div class="study-content" id="studyContent"></div>
+            <button class="study-close-btn" id="studyCloseBtn">Done Studying</button>
+        </div>
+    </div>
+
+    <script>
+        const GAME_DURATION = 60; // seconds
+
+        // Background gradient colors (start = calm, end = stress)
+        const BG_START = { r1: 10, g1: 10, b1: 10, r2: 13, g2: 26, b2: 13, r3: 17, g3: 17, b3: 17 };
+        const BG_END = { r1: 5, g1: 5, b1: 5, r2: 20, g2: 8, b2: 8, r3: 10, g3: 10, b3: 10 };
+
+        const METER_CAP = -10; // game ends if any meter reaches this value
+
+        let gameData = null;
+        let distractionsData = null;
+        let currentAlert = 0;
+        let timeLeft = GAME_DURATION;
+        let timerInterval = null;
+        let playerName = '';
+        const cyberNames = [
+            'ZeroCool', 'N3tRunn3r', 'PhantomByte', 'CipherPunk',
+            'DarkTrace', 'NullSec', 'ByteStorm', 'GhostPacket',
+            'RootShell', 'ShadowPing', 'IronProxy', 'VoidKernel',
+            'NeonStack', 'HexWraith', 'DataReaper', 'SilentNode',
+            'CrashDaemon', 'PixelForge', 'ThreatHuntr', 'MalwareMike',
+            'PacketSniffr', 'FirewallFinn', 'PortScanPete', 'LogJammer',
+            'AlertFatigu3', 'SIEMaster', 'IncidentIra', 'SOCstar',
+            'CVE_Hunter', 'HashCrackr', 'TokenTina', 'SpoofySam',
+            'BackdoorBob', 'W1reshark', 'Sn0rtMaster', 'Y4raQueen',
+            'Decompil3r', 'ExploitEva', 'PatchPilot', 'Encryptor99'
+        ];
+        let meters = { noise: 0, damage: 0, risk: 0, career: 0 };
+        let alertsHandled = 0;
+        let shuffledAlerts = [];
+        let showingExplanation = false;
+        let showingDistraction = false;
+        let showingStudy = false;
+        let gameEndReason = 'time'; // 'time' or meter name
+        let pendingGameEnd = false; // true if game should end after explanation
+        let pendingDistraction = null; // distraction to show after explanation
+        let usedDistractions = [];
+
+        // Load questions, distractions, and leaderboard
+        fetch('questions.json')
+            .then(r => r.json())
+            .then(data => { gameData = data; })
+            .catch(e => console.error('Failed to load questions:', e));
+
+        fetch('distractions.json')
+            .then(r => r.json())
+            .then(data => { distractionsData = data; })
+            .catch(e => console.error('Failed to load distractions:', e));
+
+        loadStartLeaderboard();
+
+        // DOM elements
+        const startScreen = document.getElementById('startScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const resultsScreen = document.getElementById('resultsScreen');
+        const floatingLeaderboard = document.querySelector('.start-leaderboard');
+        const nameInput = document.getElementById('nameInput');
+        nameInput.value = cyberNames[Math.floor(Math.random() * cyberNames.length)];
+        nameInput.addEventListener('focus', () => {
+            if (cyberNames.includes(nameInput.value)) nameInput.value = '';
+        });
+        nameInput.addEventListener('blur', () => {
+            if (!nameInput.value.trim()) nameInput.value = cyberNames[Math.floor(Math.random() * cyberNames.length)];
+        });
+        const startBtn = document.getElementById('startBtn');
+        const timerEl = document.getElementById('timer');
+        const playerDisplay = document.getElementById('playerDisplay');
+        const questionCounter = document.getElementById('questionCounter');
+        const alertText = document.getElementById('alertText');
+        const alertCard = document.getElementById('alertCard');
+        const actionBtns = document.querySelectorAll('.action-btn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const explanationOverlay = document.getElementById('explanationOverlay');
+        const distractionOverlay = document.getElementById('distractionOverlay');
+        const distractionFrom = document.getElementById('distractionFrom');
+        const distractionMessage = document.getElementById('distractionMessage');
+        const distractionOptions = document.getElementById('distractionOptions');
+        const explanationCard = document.getElementById('explanationCard');
+        const explanationAction = document.getElementById('explanationAction');
+        const expWhatYouDid = document.getElementById('expWhatYouDid');
+        const expWhatHappening = document.getElementById('expWhatHappening');
+        const expWhatCaused = document.getElementById('expWhatCaused');
+        const studyBtn = document.getElementById('studyBtn');
+        const studyOverlay = document.getElementById('studyOverlay');
+        const studyContent = document.getElementById('studyContent');
+        const studyCloseBtn = document.getElementById('studyCloseBtn');
+        const hintsContent = document.getElementById('hintsContent');
+
+        function showScreen(screen) {
+            [startScreen, gameScreen, resultsScreen].forEach(s => s.classList.remove('active'));
+            screen.classList.add('active');
+            floatingLeaderboard.style.display = screen === resultsScreen ? 'none' : '';
+        }
+
+        function shuffleArray(arr) {
+            const shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function startGame() {
+            playerName = nameInput.value.trim() || 'Anonymous';
+            playerDisplay.textContent = playerName;
+
+            // Reset game state
+            currentAlert = 0;
+            timeLeft = GAME_DURATION;
+            meters = { noise: 0, damage: 0, risk: 0, career: 0 };
+            alertsHandled = 0;
+            shuffledAlerts = shuffleArray(gameData.alerts);
+            gameEndReason = 'time';
+            pendingGameEnd = false;
+            pendingDistraction = null;
+            usedDistractions = [];
+
+            updateMetersDisplay();
+            actionBtns.forEach(btn => btn.disabled = false);
+            showAlert();
+            showScreen(gameScreen);
+
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            timeLeft--;
+            timerEl.textContent = timeLeft;
+            document.getElementById('studyTimer').textContent = timeLeft;
+
+            timerEl.classList.remove('warning', 'danger');
+            if (timeLeft <= 10) timerEl.classList.add('danger');
+            else if (timeLeft <= 30) timerEl.classList.add('warning');
+
+            updateBackground();
+
+            if (timeLeft <= 0) endGame();
+        }
+
+        function updateBackground() {
+            const p = 1 - (timeLeft / GAME_DURATION);
+            const lerp = (start, end) => Math.round(start + (end - start) * p);
+            const r1 = lerp(BG_START.r1, BG_END.r1);
+            const g1 = lerp(BG_START.g1, BG_END.g1);
+            const b1 = lerp(BG_START.b1, BG_END.b1);
+            const r2 = lerp(BG_START.r2, BG_END.r2);
+            const g2 = lerp(BG_START.g2, BG_END.g2);
+            const b2 = lerp(BG_START.b2, BG_END.b2);
+            const r3 = lerp(BG_START.r3, BG_END.r3);
+            const g3 = lerp(BG_START.g3, BG_END.g3);
+            const b3 = lerp(BG_START.b3, BG_END.b3);
+            document.body.style.background = `linear-gradient(135deg, rgb(${r1},${g1},${b1}) 0%, rgb(${r2},${g2},${b2}) 50%, rgb(${r3},${g3},${b3}) 100%)`;
+        }
+
+        function showAlert() {
+            if (currentAlert >= shuffledAlerts.length) {
+                shuffledAlerts = shuffleArray(gameData.alerts);
+                currentAlert = 0;
+            }
+
+            const alert = shuffledAlerts[currentAlert];
+            alertText.textContent = alert.alert;
+            questionCounter.textContent = `Alert ${alertsHandled + 1}`;
+
+            alertCard.style.animation = 'none';
+            alertCard.offsetHeight;
+            alertCard.style.animation = 'slideIn 0.3s ease-out';
+
+            // Update floating hints panel
+            const studyData = alert.actions.STUDY?.explanation;
+            const hints = studyData?.deduce_action_points || {};
+            hintsContent.innerHTML = ['IGNORE', 'ESCALATE', 'MITIGATE'].map(action => {
+                const hintClass = action === 'IGNORE' ? 'hint-ignore' :
+                                  action === 'ESCALATE' ? 'hint-escalate' : 'hint-mitigate';
+                const text = hints[action] || '';
+                return `<div class="hint-item">
+                    <div class="hint-action ${hintClass}">${action}</div>
+                    <div class="hint-text">${text}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function handleAction(action) {
+            if (showingExplanation || showingStudy) return;
+
+            const alert = shuffledAlerts[currentAlert];
+            const actionData = alert.actions[action];
+            const effects = actionData.points;
+
+            // Apply effects
+            Object.keys(effects).forEach(meter => {
+                const change = effects[meter];
+                meters[meter] += change;
+                showFloatingEffect(meter, change);
+            });
+
+            alertsHandled++;
+            updateMetersDisplay();
+
+            // Check if any meter hit the cap
+            const cappedMeter = Object.keys(meters).find(m => meters[m] <= METER_CAP);
+            if (cappedMeter) {
+                gameEndReason = cappedMeter;
+                pendingGameEnd = true;
+            }
+
+            // Check if distraction should be shown after this explanation
+            if (!pendingGameEnd && distractionsData && alertsHandled > 0 && alertsHandled % distractionsData.interval === 0) {
+                pendingDistraction = getRandomDistraction();
+            }
+
+            // Show explanation
+            showExplanation(action, actionData.explanation, effects);
+        }
+
+        function showExplanation(action, explanation, points) {
+            showingExplanation = true;
+
+            // Pause the game timer
+            clearInterval(timerInterval);
+
+            // Set action label and color
+            const actionLabels = { IGNORE: 'Ignored', ESCALATE: 'Escalated', MITIGATE: 'Mitigated' };
+            explanationAction.textContent = actionLabels[action];
+            explanationAction.className = 'explanation-action';
+            if (action === 'IGNORE') explanationAction.classList.add('action-ignore');
+            else if (action === 'ESCALATE') explanationAction.classList.add('action-escalate');
+            else explanationAction.classList.add('action-mitigate');
+
+            // Set explanation text
+            expWhatYouDid.textContent = explanation.what_you_did;
+            expWhatHappening.textContent = explanation.what_was_probably_happening;
+            expWhatCaused.textContent = explanation.what_it_caused;
+
+            // Render score changes with why_points_changed
+            const expScores = document.getElementById('expScores');
+            const meterLabels = { noise: 'Noise', damage: 'Damage', risk: 'Risk', career: 'Career' };
+            const whyChanged = explanation.why_points_changed || {};
+            expScores.innerHTML = Object.keys(points).map(meter => {
+                const val = points[meter];
+                // For career: + is good, - is bad. For others: + is bad, - is good
+                const isGood = meter === 'career' ? val > 0 : val < 0;
+                const isBad = meter === 'career' ? val < 0 : val > 0;
+                const cls = isBad ? 'negative' : isGood ? 'positive' : 'neutral';
+                const display = val > 0 ? `+${val}` : val;
+                const why = whyChanged[meter] || '';
+                return `<div class="score-change">
+                    <div class="score-change-label">${meterLabels[meter]}</div>
+                    <div class="score-change-value ${cls}">${display}</div>
+                    ${why ? `<div class="score-change-why">${why}</div>` : ''}
+                </div>`;
+            }).join('');
+
+            // Show overlay
+            explanationOverlay.classList.add('visible');
+        }
+
+        function hideExplanation() {
+            showingExplanation = false;
+            explanationOverlay.classList.remove('visible');
+
+            // Check if game should end (meter cap reached)
+            if (pendingGameEnd) {
+                pendingGameEnd = false;
+                endGame();
+                return;
+            }
+
+            // Check if distraction should be shown
+            if (pendingDistraction) {
+                // Resume timer - it keeps running during distractions!
+                timerInterval = setInterval(updateTimer, 1000);
+                showDistraction(pendingDistraction);
+                pendingDistraction = null;
+                return;
+            }
+
+            currentAlert++;
+            showAlert();
+
+            // Resume the game timer
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function getRandomDistraction() {
+            const distractions = distractionsData.distractions;
+            // Get unused distractions
+            const available = distractions.filter((_, i) => !usedDistractions.includes(i));
+            if (available.length === 0) {
+                usedDistractions = [];
+                return distractions[Math.floor(Math.random() * distractions.length)];
+            }
+            const index = distractions.indexOf(available[Math.floor(Math.random() * available.length)]);
+            usedDistractions.push(index);
+            return distractions[index];
+        }
+
+        function showDistraction(distraction) {
+            showingDistraction = true;
+
+            distractionFrom.textContent = distraction.from;
+            distractionMessage.textContent = distraction.message;
+
+            // Render options
+            distractionOptions.innerHTML = distraction.options.map(opt =>
+                `<button class="distraction-btn">${opt}</button>`
+            ).join('');
+
+            // Add click handlers to options
+            distractionOptions.querySelectorAll('.distraction-btn').forEach(btn => {
+                btn.addEventListener('click', hideDistraction);
+            });
+
+            distractionOverlay.classList.add('visible');
+        }
+
+        function hideDistraction() {
+            showingDistraction = false;
+            distractionOverlay.classList.remove('visible');
+
+            currentAlert++;
+            showAlert();
+
+            // Timer was already running during distraction (the cruel part)
+        }
+
+        function showStudy() {
+            if (showingExplanation || showingDistraction || showingStudy) return;
+
+            const alert = shuffledAlerts[currentAlert];
+            const studyData = alert.actions.STUDY?.explanation;
+
+            if (!studyData) {
+                // No study data for this alert
+                return;
+            }
+
+            showingStudy = true;
+
+            // Timer keeps running during study (that's the time cost)
+            document.getElementById('studyTimer').textContent = timeLeft;
+
+            // Set content
+            studyContent.textContent = studyData.long_description || 'No detailed information available.';
+
+            studyOverlay.classList.add('visible');
+        }
+
+        function hideStudy() {
+            showingStudy = false;
+            studyOverlay.classList.remove('visible');
+        }
+
+        function showFloatingEffect(meter, change) {
+            if (change === 0) return;
+
+            const meterEl = document.getElementById(`meter${meter.charAt(0).toUpperCase() + meter.slice(1)}`);
+            const rect = meterEl.getBoundingClientRect();
+
+            // For career: + is good, - is bad. For others: + is bad, - is good
+            const isGood = meter === 'career' ? change > 0 : change < 0;
+            const float = document.createElement('div');
+            float.className = `float-effect ${isGood ? 'float-positive' : 'float-negative'}`;
+            float.textContent = change > 0 ? `+${change}` : change;
+            float.style.left = `${rect.left + rect.width / 2}px`;
+            float.style.top = `${rect.top}px`;
+
+            document.body.appendChild(float);
+            setTimeout(() => float.remove(), 1000);
+        }
+
+        function updateMetersDisplay() {
+            document.getElementById('meterNoise').textContent = meters.noise;
+            document.getElementById('meterDamage').textContent = meters.damage;
+            document.getElementById('meterRisk').textContent = meters.risk;
+            document.getElementById('meterCareer').textContent = meters.career;
+        }
+
+        async function endGame() {
+            clearInterval(timerInterval);
+            showingExplanation = false;
+            showingDistraction = false;
+            showingStudy = false;
+            explanationOverlay.classList.remove('visible');
+            distractionOverlay.classList.remove('visible');
+            studyOverlay.classList.remove('visible');
+
+            // Save score
+            await saveScore();
+
+            // Set title based on end reason
+            const resultTitle = document.getElementById('resultTitle');
+            const resultSubtitle = document.getElementById('resultSubtitle');
+            if (gameEndReason === 'time') {
+                resultTitle.textContent = "Time's Up!";
+                resultSubtitle.textContent = '';
+            } else {
+                const meterLabels = { noise: 'Noise', damage: 'Damage', risk: 'Risk', career: 'Career' };
+                resultTitle.textContent = 'Game Over!';
+                resultSubtitle.textContent = `Your ${meterLabels[gameEndReason]} meter hit ${METER_CAP}`;
+            }
+
+            // Show results
+            document.getElementById('finalScore').textContent = alertsHandled;
+            document.getElementById('finalNoise').textContent = meters.noise;
+            document.getElementById('finalDamage').textContent = meters.damage;
+            document.getElementById('finalRisk').textContent = meters.risk;
+            document.getElementById('finalCareer').textContent = meters.career;
+
+            renderLeaderboard();
+            showScreen(resultsScreen);
+        }
+
+        async function saveScore() {
+            try {
+                await fetch('/api/scores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: playerName,
+                        alerts: alertsHandled,
+                        meters: { ...meters }
+                    })
+                });
+            } catch (e) {
+                console.error('Failed to save score:', e);
+            }
+        }
+
+        async function fetchScores() {
+            try {
+                const res = await fetch('/api/scores');
+                return await res.json();
+            } catch (e) {
+                console.error('Failed to fetch scores:', e);
+                return [];
+            }
+        }
+
+        function renderLeaderboardToElement(scores, elementId, highlightCurrent = false) {
+            const list = document.getElementById(elementId);
+            if (!list) return;
+            list.innerHTML = '';
+
+            scores.slice(0, 10).forEach((score, i) => {
+                const entry = document.createElement('div');
+                entry.className = 'leaderboard-entry';
+
+                if (highlightCurrent && score.name === playerName && score.alerts === alertsHandled) {
+                    entry.classList.add('highlight');
+                }
+
+                let rankClass = '';
+                if (i === 0) rankClass = 'gold';
+                else if (i === 1) rankClass = 'silver';
+                else if (i === 2) rankClass = 'bronze';
+
+                entry.innerHTML = `
+                    <span class="rank ${rankClass}">${i + 1}</span>
+                    <span class="entry-name">${score.name}</span>
+                    <span class="entry-score">${score.alerts} alerts</span>
+                `;
+                list.appendChild(entry);
+            });
+        }
+
+        async function renderLeaderboard() {
+            const scores = await fetchScores();
+            renderLeaderboardToElement(scores, 'leaderboardList', true);
+            loadStats('resultsStats');
+        }
+
+        async function loadStartLeaderboard() {
+            const scores = await fetchScores();
+            renderLeaderboardToElement(scores, 'startLeaderboardList', false);
+            loadStats('startStats');
+        }
+
+        async function loadStats(elementId) {
+            try {
+                const res = await fetch('/api/stats');
+                const stats = await res.json();
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                el.innerHTML = `
+                    <div class="stat-row"><span>Games played</span><span class="stat-val">${stats.totalGames}</span></div>
+                    <div class="stat-row"><span>Unique players</span><span class="stat-val">${stats.uniquePlayers}</span></div>
+                    <div class="stat-row"><span>Avg. alerts</span><span class="stat-val">${stats.averageAlerts}</span></div>
+                `;
+            } catch (e) {}
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', () => {
+            if (gameData) startGame();
+        });
+
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && gameData) startGame();
+        });
+
+        explanationOverlay.addEventListener('click', () => {
+            if (showingExplanation) hideExplanation();
+        });
+
+        studyBtn.addEventListener('click', showStudy);
+        studyCloseBtn.addEventListener('click', hideStudy);
+
+        actionBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                btn.classList.add('clicked');
+                setTimeout(() => btn.classList.remove('clicked'), 300);
+                handleAction(btn.dataset.action);
+            });
+        });
+
+        playAgainBtn.addEventListener('click', () => {
+            nameInput.value = playerName;
+            document.body.style.background = `linear-gradient(135deg, rgb(${BG_START.r1},${BG_START.g1},${BG_START.b1}) 0%, rgb(${BG_START.r2},${BG_START.g2},${BG_START.b2}) 50%, rgb(${BG_START.r3},${BG_START.g3},${BG_START.b3}) 100%)`;
+            loadStartLeaderboard();
+            showScreen(startScreen);
+        });
+    </script>
+</body>
+</html>

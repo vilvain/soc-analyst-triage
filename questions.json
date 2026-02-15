@@ -1,0 +1,1362 @@
+{
+  "game": "SOC Analyst Speed-Run",
+  "version": "1.0",
+  "player_choices": [
+    "IGNORE",
+    "ESCALATE",
+    "MAKE_IT_WORSE"
+  ],
+  "meters": [
+    {
+      "key": "noise",
+      "label": "Noise",
+      "meaning": "How much attention, interruption, and organizational friction you created."
+    },
+    {
+      "key": "damage",
+      "label": "Damage",
+      "meaning": "How much you broke (availability, operations, dependencies, trust)."
+    },
+    {
+      "key": "risk",
+      "label": "Risk",
+      "meaning": "How compromised the organization is now (or how likely a breach is to continue)."
+    },
+    {
+      "key": "career",
+      "label": "Career",
+      "meaning": "How management feels about you (politics, perceived competence, disruption tolerance)."
+    }
+  ],
+  "scoring_philosophy": {
+    "real_reason": "SOC outcomes are judged by disruption and optics as much as by security correctness. This scoring intentionally rewards quiet behavior sometimes and punishes 'right' actions when they create friction.",
+    "sanitized_reason": "The scoring reflects operational tradeoffs between speed, business continuity, and risk reduction."
+  },
+  "default_points_by_action": {
+    "IGNORE": {
+      "noise": 1,
+      "damage": 0,
+      "risk": -2,
+      "career": 1
+    },
+    "ESCALATE": {
+      "noise": -2,
+      "damage": 0,
+      "risk": 1,
+      "career": -1
+    },
+    "MITIGATE": {
+      "noise": -3,
+      "damage": -3,
+      "risk": 1,
+      "career": -2
+    }
+  },
+  "alerts": [
+    {
+      "id": 1,
+      "title": "Impossible Travel",
+      "alert": "Impossible travel detected: user logged in from Ivalo and Rovaniemi within 2 minutes.",
+      "likely_scenario": "Most commonly VPN/proxy behavior or mobile carrier IP changes. But it can also be credential theft, token replay, or attacker login from another region while the user is still active.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You treated it as normal VPN behavior and moved on.",
+            "what_was_probably_happening": "a false positive and a real attacker reusing stolen credentials while the user was also active.",
+            "what_it_caused": "It was real, the attacker keeps access longer and blends in with normal sign-ins.",
+            "why_points_changed": {
+              "noise": "You avoided pulling others into the issue.",
+              "risk": "Potential compromise continues unchecked.",
+              "career": "Management likes quiet shifts and uninterrupted users.",
+              "damage": "You didn't directly break anything."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated for identity verification and log review.",
+            "what_was_probably_happening": "You triggered a deeper investigation: device posture, token lifetime checks, sign-in patterns, and user confirmation.",
+            "what_it_caused": "More stakeholders get involved; user annoyance goes up; It was real, you shorten attacker dwell time.",
+            "why_points_changed": {
+              "noise": "You created meetings/tickets/chats.",
+              "risk": "You pushed toward containment and validation.",
+              "career": "You inconvenienced someone who will be legitimate.",
+              "damage": "You didn’t break systems, just created work."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You immediately disabled the account and forced global sign-out.",
+            "what_was_probably_happening": "false positive; It is a VIP, you just created a crisis.",
+            "what_it_caused": "Business interruption and executive escalation; It was real, you stopped the attacker quickly.",
+            "why_points_changed": {
+              "noise": "People notice instantly when a user is locked out.",
+              "damage": "Work stops; approvals fail; critical access breaks.",
+              "risk": "You have cut off an attacker.",
+              "career": "Leaders judge outages more harshly than invisible risk."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "Impossible Travel: Impossible travel detected: user logged in from Ivalo and Rovaniemi within 2 minutes.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Most commonly VPN/proxy behavior or mobile carrier IP changes. But it can also be credential theft, token replay, or attacker login from another region while the user is still active.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Encoded PowerShell",
+      "alert": "PowerShell executed with an encoded command on a finance workstation.",
+      "likely_scenario": "Often legitimate automation, device management tooling, or admin scripts. Also a very common malware and post-exploitation technique.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You assumed it was normal admin tooling and dismissed it.",
+            "what_was_probably_happening": "was be benign. It was malicious, the attacker is using a living-off-the-land technique to avoid detection.",
+            "what_it_caused": "It was malicious, you normalized a dangerous pattern and extended dwell time.",
+            "why_points_changed": {
+              "noise": "No escalation, no disruption.",
+              "risk": "It was real, compromise persists.",
+              "career": "You didn’t create friction for finance.",
+              "damage": "No direct breakage."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated for triage: parent process, command decoding, script origin, and user context.",
+            "what_was_probably_happening": "You triggered a real investigation that will conclude 'benign management task'.",
+            "what_it_caused": "Time spent decoding and correlating; user interruption; It was malicious, faster containment.",
+            "why_points_changed": {
+              "noise": "Cross-team involvement increases chatter.",
+              "risk": "Investigation reduces uncertainty and will stop a threat.",
+              "career": "It is benign, you look like you cried wolf.",
+              "damage": "No immediate production impact."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You killed the process / deleted the script / quarantined aggressively.",
+            "what_was_probably_happening": "High chance it was used by legitimate management and automation.",
+            "what_it_caused": "Finance tooling fails, reports break, and deployment pipelines stall; It was malicious, you still will not remove persistence.",
+            "why_points_changed": {
+              "noise": "Everyone notices broken finance workflows.",
+              "damage": "You broke something operational.",
+              "risk": "You have stopped one malicious step, but not necessarily the root cause.",
+              "career": "Breaking finance is a fast path to being hated."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "Encoded PowerShell: PowerShell executed with an encoded command on a finance workstation.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Often legitimate automation, device management tooling, or admin scripts. Also a very common malware and post-exploitation technique.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Service Account Login Storm",
+      "alert": "Multiple failed logins followed by success on a service account.",
+      "likely_scenario": "Password spraying/guessing, misconfigured automation, expired credentials, or credential reuse by an attacker.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You assumed the service account is always noisy and ignored it.",
+            "what_was_probably_happening": "bad automation and an attacker brute-forcing until success.",
+            "what_it_caused": "It was an attacker, they now have stable access through a high-privilege identity with poor oversight.",
+            "why_points_changed": {
+              "noise": "No investigation started.",
+              "risk": "Service accounts are perfect persistence targets; leaving it alone is risky.",
+              "career": "You avoided touching critical automation.",
+              "damage": "No immediate outages."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated to find the owner and validate expected behavior.",
+            "what_was_probably_happening": "You discover ownership is unclear, documentation is stale, and no one wants responsibility.",
+            "what_it_caused": "Lots of back-and-forth. It was malicious, you at least surface it sooner.",
+            "why_points_changed": {
+              "noise": "Ownership hunts create organizational noise.",
+              "risk": "Some containment/investigation reduces risk.",
+              "career": "You created work that nobody wants.",
+              "damage": "You haven’t broken production yet."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You rotated credentials and disabled the service account immediately.",
+            "what_was_probably_happening": "It was automation, you just broke it. It was an attacker, you will stop them but also cause collateral damage.",
+            "what_it_caused": "Production dependency failures and emergency rollback.",
+            "why_points_changed": {
+              "noise": "Outages summon everyone.",
+              "damage": "Automation breaks hard and fast.",
+              "risk": "You reduced access for a compromised identity.",
+              "career": "You broke services in the name of security."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "Service Account Login Storm: Multiple failed logins followed by success on a service account.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Password spraying/guessing, misconfigured automation, expired credentials, or credential reuse by an attacker.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Suspicious Data Transfer",
+      "alert": "Large outbound data transfer to unknown Lapland cloud storage.",
+      "likely_scenario": "Could be legitimate backup/sync, a misconfigured job, or real exfiltration to a personal or attacker-controlled storage account.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You assumed it was a backup/sync and ignored it.",
+            "what_was_probably_happening": "it is legitimate. When it’s not, it’s late-stage exfiltration.",
+            "what_it_caused": "If exfiltration, you just let the attacker finish the job quietly.",
+            "why_points_changed": {
+              "noise": "You didn’t interrupt any teams.",
+              "risk": "Data loss risk increases significantly.",
+              "career": "Nobody complains when you do nothing.",
+              "damage": "No direct downtime created."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated to validate data classification, destination ownership, and job intent.",
+            "what_was_probably_happening": "You run into process friction: classification unknown, ownership unclear, approvals needed.",
+            "what_it_caused": "Slower response but better stopping real exfiltration through coordinated action.",
+            "why_points_changed": {
+              "noise": "Legal/compliance/security all get pulled in.",
+              "risk": "Investigation will reduce impact.",
+              "career": "You annoyed teams with questions they will’t answer quickly.",
+              "damage": "You didn’t break anything yet."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You blocked Lapland cloud storage and outbound traffic broadly.",
+            "what_was_probably_happening": "You stopped both exfiltration and legitimate business workflows.",
+            "what_it_caused": "Sales, collaboration, backups, and file sharing break. People route around controls.",
+            "why_points_changed": {
+              "noise": "Everyone complains immediately.",
+              "damage": "Wide blocks cause broad outages and workarounds.",
+              "risk": "You have stopped the immediate data transfer.",
+              "career": "You look like you panicked and broke the internet."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "Suspicious Data Transfer: Large outbound data transfer to unknown Lapland cloud storage.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Could be legitimate backup/sync, a misconfigured job, or real exfiltration to a personal or attacker-controlled storage account.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "EDR Medium Confidence",
+      "alert": "EDR reports suspicious behavior with confidence level 'medium'.",
+      "likely_scenario": "Could be noisy tooling, benign admin behavior, or early-stage compromise that hasn’t fully manifested.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You treated 'medium' as 'ignore' to preserve analyst time.",
+            "what_was_probably_happening": "Medium alerts are where real compromises hide because teams are tired of noise.",
+            "what_it_caused": "extended attacker dwell time and reduced catching them early.",
+            "why_points_changed": {
+              "noise": "You kept things quiet.",
+              "risk": "Uncertainty accumulates; It was real, you lost time.",
+              "career": "You look efficient by not escalating.",
+              "damage": "No downtime created."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated for deeper telemetry review and scoping.",
+            "what_was_probably_happening": "You will prove it’s benign, and you will catch something early.",
+            "what_it_caused": "More time spent and more stakeholders engaged, ending with 'false positive'.",
+            "why_points_changed": {
+              "noise": "More review cycles.",
+              "risk": "Better chance to contain early compromise.",
+              "career": "It is nothing, you look overcautious.",
+              "damage": "No direct outage."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You isolated endpoints broadly and initiated mass containment.",
+            "what_was_probably_happening": "You treated uncertainty as certainty.",
+            "what_it_caused": "Sudden productivity collapse and massive incident coordination overhead.",
+            "why_points_changed": {
+              "noise": "Isolation events trigger immediate escalations.",
+              "damage": "Users will’t work; systems will’t talk.",
+              "risk": "You reduced attacker ability to operate (maybe).",
+              "career": "You created a business-impact incident from a 'medium' alert."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "EDR Medium Confidence: EDR reports suspicious behavior with confidence level 'medium'.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Could be noisy tooling, benign admin behavior, or early-stage compromise that hasn’t fully manifested.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "After-Hours Global Admin",
+      "alert": "New global admin role assigned outside business hours.",
+      "likely_scenario": "Could be legitimate emergency work, a scheduled change, or privilege escalation by an attacker. High impact if malicious.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You assumed it was an approved change and ignored it.",
+            "what_was_probably_happening": "If attacker-driven, this is the point where they gain long-term control of identity systems.",
+            "what_it_caused": "catastrophic persistence.",
+            "why_points_changed": {
+              "noise": "No one was disturbed.",
+              "risk": "It was malicious, risk skyrockets.",
+              "career": "You avoided causing a leadership wake-up call.",
+              "damage": "Nothing broke immediately."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated to validate change approval and actor identity.",
+            "what_was_probably_happening": "You forced governance to do its job: approvals, justifications, and verification.",
+            "what_it_caused": "A lot of political friction, but it’s the correct move when stakes are high.",
+            "why_points_changed": {
+              "noise": "You woke people up and created governance work.",
+              "risk": "Validation/rollback reduces risk.",
+              "career": "You embarrassed someone who thought they was do this quietly.",
+              "damage": "No outages yet."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You revoked the role immediately and disabled the assigning account.",
+            "what_was_probably_happening": "It was legitimate, you just broke automation and on-call emergency response.",
+            "what_it_caused": "Lockouts, broken pipelines, and delayed response to real issues.",
+            "why_points_changed": {
+              "noise": "Admins scream when access disappears.",
+              "damage": "Operational tooling will fail.",
+              "risk": "You reduced potential attacker privilege (It was malicious).",
+              "career": "You interfered with 'important people doing important things'."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "After-Hours Global Admin: New global admin role assigned outside business hours.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Could be legitimate emergency work, a scheduled change, or privilege escalation by an attacker. High impact if malicious.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "AV Off-On Blink",
+      "alert": "Endpoint disabled antivirus briefly, then re-enabled.",
+      "likely_scenario": "Could be update/restart behavior, local admin actions, tampering by malware, or misconfigured policies.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You assumed it was a normal update event.",
+            "what_was_probably_happening": "It was malicious, the attacker briefly disabled protections to run tooling.",
+            "what_it_caused": "You possibly missed the window where malicious activity occurred.",
+            "why_points_changed": {
+              "noise": "No one was bothered.",
+              "risk": "Tampering will indicate compromise.",
+              "career": "No user disruption.",
+              "damage": "No systems broken."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated for confirmation: update logs, policy enforcement, local admin actions.",
+            "what_was_probably_happening": "benign, but you need evidence. This creates friction for endpoint teams.",
+            "what_it_caused": "Investigation overhead; It was malicious, improves detection and containment.",
+            "why_points_changed": {
+              "noise": "Endpoint team involvement.",
+              "risk": "Increased visibility reduces risk.",
+              "career": "You created work over something benign.",
+              "damage": "No direct outage."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You removed security tooling, forced reinstall, and applied aggressive remediation immediately.",
+            "what_was_probably_happening": "You treated a blink as proof of compromise.",
+            "what_it_caused": "Endpoints lose protection temporarily and become unstable; users are blocked; productivity drops.",
+            "why_points_changed": {
+              "noise": "Users complain loudly.",
+              "damage": "Tooling instability creates outages.",
+              "risk": "You have reduced immediate attacker activity, but you also created gaps.",
+              "career": "You look reckless and disruptive."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "AV Off-On Blink: Endpoint disabled antivirus briefly, then re-enabled.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Could be update/restart behavior, local admin actions, tampering by malware, or misconfigured policies.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "MFA Fatigue",
+      "alert": "MFA push approved after multiple denied attempts.",
+      "likely_scenario": "Classic MFA fatigue / push bombing. Could be user confusion, but high suspicion if there are many denials then one approval.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You assumed the user finally remembered the correct request and moved on.",
+            "what_was_probably_happening": "Attacker spammed prompts until the user accepted to make it stop.",
+            "what_it_caused": "Attacker gains valid session and begins lateral movement.",
+            "why_points_changed": {
+              "noise": "No user contact and follow-up.",
+              "risk": "This pattern indicates compromise.",
+              "career": "You didn’t annoy the user and escalate.",
+              "damage": "No immediate outage."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated to contact the user and confirm legitimacy.",
+            "what_was_probably_happening": "User education moment; you will catch an active compromise.",
+            "what_it_caused": "User annoyance and support load, but stops attacker quickly.",
+            "why_points_changed": {
+              "noise": "Support/security engagement rises.",
+              "risk": "You reduce attacker dwell time.",
+              "career": "Users hate being called about MFA prompts.",
+              "damage": "No systems broken."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You reset MFA and forced re-registration for a large group.",
+            "what_was_probably_happening": "You solved one case by making it everyone’s problem.",
+            "what_it_caused": "Mass lockouts, helpdesk overload, and work stoppage.",
+            "why_points_changed": {
+              "noise": "Helpdesk meltdown is loud.",
+              "damage": "People cannot sign in.",
+              "risk": "You reduced access for a possibly compromised account.",
+              "career": "You created a measurable outage."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "MFA Fatigue: MFA push approved after multiple denied attempts.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Classic MFA fatigue / push bombing. Could be user confusion, but high suspicion if there are many denials then one approval.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Rogue Device Registration",
+      "alert": "Unknown device registered to an existing user account.",
+      "likely_scenario": "Could be legitimate BYOD or a stolen session used to enroll a device for persistence and future access.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You assumed the user enrolled a new phone/laptop.",
+            "what_was_probably_happening": "If attacker-driven, they just created a durable foothold with a trusted device identity.",
+            "what_it_caused": "Persistent access that survives password resets.",
+            "why_points_changed": {
+              "noise": "No user contact.",
+              "risk": "Device enrollment was a major persistence mechanism.",
+              "career": "No friction created.",
+              "damage": "No outage."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated to verify device ownership and enrollment legitimacy.",
+            "what_was_probably_happening": "You must contact the user and check enrollment records.",
+            "what_it_caused": "Some inconvenience; better catching stolen sessions early.",
+            "why_points_changed": {
+              "noise": "More coordination required.",
+              "risk": "You increase assurance.",
+              "career": "Users hate enrollment friction and security calls.",
+              "damage": "No downtime."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You wiped and blocked the device immediately.",
+            "what_was_probably_happening": "High risk of wiping a legitimate personal device and critical work device.",
+            "what_it_caused": "Data loss, angry user, and legal/HR involvement.",
+            "why_points_changed": {
+              "noise": "The user escalates instantly.",
+              "damage": "Wipes will destroy important data.",
+              "risk": "You removed a potential foothold.",
+              "career": "You created a high-drama incident."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "Rogue Device Registration: Unknown device registered to an existing user account.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Could be legitimate BYOD or a stolen session used to enroll a device for persistence and future access.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Legacy Failure Spam",
+      "alert": "Legacy system generating authentication failures every minute.",
+      "likely_scenario": "Often a broken integration, expired credential, or time drift. The risk is that constant noise masks real attacks.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You accepted it as 'normal legacy noise'.",
+            "what_was_probably_happening": "A broken system and integration is screaming continuously; attackers love hiding inside noisy baselines.",
+            "what_it_caused": "Alert fatigue increases and true positives get missed.",
+            "why_points_changed": {
+              "noise": "You didn’t involve others.",
+              "risk": "Noise creates blind spots and normalized failure states.",
+              "career": "You didn’t touch fragile legacy.",
+              "damage": "No immediate outage from your action."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated to fix the root cause and reduce noise.",
+            "what_was_probably_happening": "Nobody wants ownership; documentation is missing; fixes are risky.",
+            "what_it_caused": "Meetings, blame, and slow resolution; but long-term risk decreases if you actually reduce noise.",
+            "why_points_changed": {
+              "noise": "Legacy ownership hunts are loud and political.",
+              "risk": "Reducing baseline noise improves detection.",
+              "career": "You touched the untouchable system.",
+              "damage": "You didn’t break it yet."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You disabled the system and blocked authentication attempts to stop the noise immediately.",
+            "what_was_probably_happening": "The legacy system was still business-critical despite everyone pretending it isn’t.",
+            "what_it_caused": "Production outage and emergency rollback; nobody even knows how to restore it quickly.",
+            "why_points_changed": {
+              "noise": "Outage triggers incident response.",
+              "damage": "Availability impact is immediate.",
+              "risk": "You reduced one noisy vector (maybe).",
+              "career": "You caused downtime, which is always punished."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "Legacy Failure Spam: Legacy system generating authentication failures every minute.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Often a broken integration, expired credential, or time drift. The risk is that constant noise masks real attacks.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Executive Mail Forwarding",
+      "alert": "Email forwarding rule created for an executive mailbox.",
+      "likely_scenario": "Often malicious: attackers create forwarding to exfiltrate mail quietly. Could be legitimate delegation, but it’s high risk.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You assumed it was delegation and executive assistant workflow.",
+            "what_was_probably_happening": "It was malicious, it’s a stealthy exfiltration channel with huge impact.",
+            "what_it_caused": "Attacker receives sensitive mail and will pivot into finance/legal processes.",
+            "why_points_changed": {
+              "noise": "You avoided contacting an executive.",
+              "risk": "Mailbox compromise risk grows.",
+              "career": "Executives rarely punish you for doing nothing.",
+              "damage": "No immediate outage."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated for verification, audit logs, and rule origin checks.",
+            "what_was_probably_happening": "You forced a review of executive mailbox controls and delegations.",
+            "what_it_caused": "Executive annoyance and political risk; better chance to stop a real compromise.",
+            "why_points_changed": {
+              "noise": "Executives + mail = high visibility.",
+              "risk": "Investigation will remove malicious forwarding quickly.",
+              "career": "Executives hate being 'bothered by security'.",
+              "damage": "No direct outage."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You removed all inbox rules / disabled forwarding broadly / forced resets.",
+            "what_was_probably_happening": "You will stop exfiltration, but you also break legitimate executive workflows.",
+            "what_it_caused": "Calendar/mail chaos, missed approvals, and angry assistants.",
+            "why_points_changed": {
+              "noise": "Executive office escalates instantly.",
+              "damage": "Mail flow disruption is a business outage.",
+              "risk": "You reduced malicious capability (maybe).",
+              "career": "Breaking executive mail is career poison."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "Executive Mail Forwarding: Email forwarding rule created for an executive mailbox.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Often malicious: attackers create forwarding to exfiltrate mail quietly. Could be legitimate delegation, but it’s high risk.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Possible C2 Traffic",
+      "alert": "Endpoint shows possible command-and-control traffic to an unknown destination.",
+      "likely_scenario": "Could be legitimate new SaaS, telemetry, or a real beacon. Often ambiguous without good allowlists and network context.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You assumed it was benign internet noise and ignored it.",
+            "what_was_probably_happening": "It was real, this is the attacker establishing control and staging actions.",
+            "what_it_caused": "Attacker keeps a channel open and will escalate later.",
+            "why_points_changed": {
+              "noise": "No escalation.",
+              "risk": "Beaconing left active is high risk.",
+              "career": "No one noticed and was impacted.",
+              "damage": "No immediate downtime."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated for network context, destination reputation, and endpoint triage.",
+            "what_was_probably_happening": "You discover allowlists are incomplete and business teams will’t explain traffic quickly.",
+            "what_it_caused": "Investigation overhead; It was malicious, increases chance to contain early.",
+            "why_points_changed": {
+              "noise": "Network + endpoint teams get involved.",
+              "risk": "Better visibility reduces risk.",
+              "career": "You will block a legitimate business tool by mistake later.",
+              "damage": "No outage yet."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You blocked broadly (domain/ASN/category) without confirming business impact.",
+            "what_was_probably_happening": "You will block real C2, but you also will block legitimate services sharing infrastructure.",
+            "what_it_caused": "Unexpected outages and emergency exceptions; users route around controls.",
+            "why_points_changed": {
+              "noise": "People notice network blocks fast.",
+              "damage": "Overbroad blocks create downtime.",
+              "risk": "You have stopped the channel.",
+              "career": "You look trigger-happy."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "Possible C2 Traffic: Endpoint shows possible command-and-control traffic to an unknown destination.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Could be legitimate new SaaS, telemetry, or a real beacon. Often ambiguous without good allowlists and network context.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Privileged From Unmanaged",
+      "alert": "Privileged account used from an unmanaged device.",
+      "likely_scenario": "Could be a contractor/consultant exception or a compromised admin account. Very high risk if real.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You accepted it as an exception (consultant, emergency work) and moved on.",
+            "what_was_probably_happening": "It was malicious, this is how attackers avoid device controls and log in 'as admin'.",
+            "what_it_caused": "control-plane compromise.",
+            "why_points_changed": {
+              "noise": "No conflict with admins.",
+              "risk": "Unmanaged privileged access is a nightmare scenario.",
+              "career": "Admins and leaders prefer fewer barriers during emergencies.",
+              "damage": "No immediate outage created."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated to verify device compliance and justification.",
+            "what_was_probably_happening": "You force governance: 'Why was this allowed?' which nobody enjoys.",
+            "what_it_caused": "prevents a major breach; also triggers political backlash.",
+            "why_points_changed": {
+              "noise": "Privilege reviews are high-friction.",
+              "risk": "Tightening privileged access reduces risk.",
+              "career": "Admins dislike being questioned.",
+              "damage": "No downtime yet."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You disabled the privileged account and blocked access immediately.",
+            "what_was_probably_happening": "It was legitimate emergency administration, you just broke a live change and recovery.",
+            "what_it_caused": "Change fails mid-flight; systems left in half-configured states; outages happen.",
+            "why_points_changed": {
+              "noise": "Admins escalate immediately.",
+              "damage": "Interrupted privileged operations will break production.",
+              "risk": "You reduced attacker ability if compromise was real.",
+              "career": "You blocked 'important work' and will be blamed."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "Privileged From Unmanaged: Privileged account used from an unmanaged device.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Could be a contractor/consultant exception or a compromised admin account. Very high risk if real.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "Obfuscated Scheduled Task",
+      "alert": "Scheduled task created with an obfuscated command.",
+      "likely_scenario": "Often persistence: attacker creates scheduled execution. Could be legitimate admin automation, but obfuscation is a red flag.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You assumed it was a messy admin script and ignored it.",
+            "what_was_probably_happening": "It was malicious, the attacker established persistence that will re-run even after reboot.",
+            "what_it_caused": "Recurring compromise and repeated payload execution.",
+            "why_points_changed": {
+              "noise": "You avoided escalation.",
+              "risk": "Persistence increases long-term risk.",
+              "career": "No one was interrupted.",
+              "damage": "No immediate outage."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated to decode the command, inspect parent process, and check task provenance.",
+            "what_was_probably_happening": "You trigger forensics work; it’s benign but ugly.",
+            "what_it_caused": "Time cost and friction; It was malicious, improves containment chances.",
+            "why_points_changed": {
+              "noise": "Forensics work involves multiple teams.",
+              "risk": "Investigation reduces attacker dwell time.",
+              "career": "You will look slow and overly cautious if benign.",
+              "damage": "No direct outage created."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You deleted the scheduled task and related files immediately.",
+            "what_was_probably_happening": "It was legitimate automation, you broke it. It was malicious, you will still miss other persistence mechanisms.",
+            "what_it_caused": "Systems fail in weird ways; deletion removes a critical maintenance job.",
+            "why_points_changed": {
+              "noise": "Unexpected failures create urgent tickets.",
+              "damage": "Automation breakage leads to outages and degraded service.",
+              "risk": "You reduced one persistence path.",
+              "career": "You changed production without coordination."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "Obfuscated Scheduled Task: Scheduled task created with an obfuscated command.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Often persistence: attacker creates scheduled execution. Could be legitimate admin automation, but obfuscation is a red flag.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    },
+    {
+      "id": 15,
+      "title": "Monitor Only Recommendation",
+      "alert": "Security alert fired and the vendor recommends: 'monitor only'.",
+      "likely_scenario": "Could be a known noisy detection, or a real threat the vendor is hedging on to reduce support liability. Often ambiguous and politically loaded.",
+      "actions": {
+        "IGNORE": {
+          "points": {
+            "noise": 1,
+            "damage": 0,
+            "risk": -2,
+            "career": 1
+          },
+          "explanation": {
+            "what_you_did": "You followed the vendor guidance and monitored quietly.",
+            "what_was_probably_happening": "it’s noise. it’s a real compromise where nobody wants responsibility.",
+            "what_it_caused": "It was real, the attacker keeps operating; if noise, you avoided pointless escalation.",
+            "why_points_changed": {
+              "noise": "You kept it quiet.",
+              "risk": "Monitoring alone will not stop a real attacker.",
+              "career": "You will deflect blame: 'we followed guidance'.",
+              "damage": "No outage created."
+            }
+          }
+        },
+        "ESCALATE": {
+          "points": {
+            "noise": -2,
+            "damage": 0,
+            "risk": 1,
+            "career": -1
+          },
+          "explanation": {
+            "what_you_did": "You escalated despite the vendor's 'monitor only' suggestion.",
+            "what_was_probably_happening": "You challenge the safe default and create friction with stakeholders who trust vendor guidance.",
+            "what_it_caused": "You will catch a real incident; you also will look like you ignored 'official advice'.",
+            "why_points_changed": {
+              "noise": "Escalation creates meetings and debate.",
+              "risk": "Active investigation reduces risk It is real.",
+              "career": "People dislike contradicting vendor guidance.",
+              "damage": "No direct outage."
+            }
+          }
+        },
+        "MITIGATE": {
+          "points": {
+            "noise": -3,
+            "damage": -3,
+            "risk": 1,
+            "career": -2
+          },
+          "explanation": {
+            "what_you_did": "You applied aggressive remediation immediately (blocks, isolation, removals).",
+            "what_was_probably_happening": "You turned an ambiguous alert into a business-impact incident.",
+            "what_it_caused": "It was real, you will stop it; if noise, you created an outage and destroyed trust in the SOC.",
+            "why_points_changed": {
+              "noise": "People now care because business is impacted.",
+              "damage": "Remediation without certainty breaks workflows.",
+              "risk": "You will reduce attacker capability.",
+              "career": "You look like you overreacted against 'monitor only'."
+            }
+          }
+        },
+        "STUDY": {
+          "explanation": {
+            "what_you_did": "You investigated quietly: pulled the raw telemetry, validated context, and built a hypothesis without waking up half the org.",
+            "what_was_probably_happening": "Could be benign or malicious — you focused on narrowing uncertainty (intent, provenance, scope) before taking disruptive action.",
+            "what_it_caused": "You improved decision quality and evidence quality. If it’s real, you may still be late unless you follow up with escalation/containment fast.",
+            "why_points_changed": {
+              "noise": "You didn’t create meetings or urgent pings yet.",
+              "damage": "You didn’t break workflows or lock out users.",
+              "risk": "You reduced uncertainty but did not contain the threat by itself.",
+              "career": "Quiet competence is usually tolerated — until you’re wrong and time is lost."
+            },
+            "long_description": "Monitor Only Recommendation: Security alert fired and the vendor recommends: 'monitor only'.\n\nWhat’s happening (signals vs. story):\n- This detection is a *pattern match* that often fires on both benign admin/automation behavior and real attacker tradecraft.\n- The key uncertainty is intent + scope: who/what initiated it, from where, and whether it is part of a larger chain.\n\nMost likely realities:\n- Benign: Could be a known noisy detection, or a real threat the vendor is hedging on to reduce support liability. Often ambiguous and politically loaded.\n- Malicious: the same observable can be used to gain/extend access, establish persistence, or move data without triggering obvious alarms.\n\nHow to reason about points (deduction guide):\n- Noise goes *down* (negative) when you pull more people/teams into it; it stays *up* (positive) when you keep it quiet.\n- Damage goes *down* (negative) when you break workflows, disable accounts, block traffic, or wipe devices.\n- Risk goes *up* (positive) when you reduce attacker dwell time / uncertainty; it goes *down* (negative) when you let a real threat continue.\n- Career goes *up* (positive) when you avoid waking important people; it goes *down* (negative) when you create visible pain, even if you’re right.\n\nFast triage pivots (what you’d look at in a real SOC):\n- Actor & auth: who did it, token/session details, MFA, sign-in risk, role changes, impossible travel patterns.\n- Provenance: parent process / initiating service, script origin, scheduled tasks, deployment tooling, change window.\n- Scope: other endpoints/users doing the same thing, first-seen time, lateral movement hints, data touched.\n- Business context: asset criticality (VIP/finance/identity), change approvals, known maintenance jobs, owner on-call.\n",
+            "deduce_action_points": {
+              "IGNORE": "Max quiet, but if the alert is real you let the attacker continue → risk drops hard, career may still look fine short-term.",
+              "ESCALATE": "Raises organizational friction (noise) but increases odds of coordinated containment → risk improves, career takes a politics hit.",
+              "MITIGATE": "Fastest visible action, but highest chance of collateral damage/outage → damage and career drop, risk improves if it was real.",
+              "STUDY": "Middle path: buy evidence fast with minimal blast radius; neutral on risk until you act."
+            },
+            "scoring_rule": "STUDY has no point impact. It only consumes time to improve your odds of choosing IGNORE, ESCALATE, or MITIGATE correctly.",
+            "time_cost": "Time advances. In a real SOC this means attacker dwell time may increase while your confidence and evidence quality improve."
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "interval": 3,
+  "distractions": [
+    {
+      "from": "SOC Manager (via Teams)",
+      "message": "Hey quick question - is the firewall still on? The CEO is asking.",
+      "options": ["Yes, it's on", "Let me check... yes", "Scream into pillow"]
+    },
+    {
+      "from": "HR Department",
+      "message": "URGENT: Please confirm you completed the 47-slide Security Awareness training from 2019.",
+      "options": ["I'll do it later", "Mark as complete", "Time is a construct"]
+    },
+    {
+      "from": "SOC Manager (walking over)",
+      "message": "Can you check my calendar real quick? I know you're busy but I think I've a lunch with SIEM vendor, but I can't remember the restaurant.",
+      "options": ["Just a sec", "I'm on the wrong computer", "Deep breathing exercises"]
+    },
+    {
+      "from": "Compliance (via Teams)",
+      "message": "We need documentation of your documentation process. Also, please document this request. ASAP.",
+      "options": ["Acknowledge", "Create ticket to create documentation", "Update resume"]
+    },
+    {
+      "from": "SOC Manager (Teams call)",
+      "message": "Quick sync? I need a status update for my status update meeting about the incident status dashboard.",
+      "options": ["Join call...", "In the middle of something", "Fake connection issues"]
+    },
+    {
+      "from": "Helpdesk (forwarded)",
+      "message": "User is asking: 'Is this email legit?' [Attached: FREE_BITCOIN_NO_VIRUS.pdf.exe]",
+      "options": ["No, delete it", "How did they even--", "Add to block list while crying"]
+    },
+    {
+      "from": "CISO (via Teams)",
+      "message": "The printer on floor 3 is showing a red light. Is this a security incident? Please advise ASAP.",
+      "options": ["Probably not", "Have you tried turning it off", "That's not... nevermind"]
+    },
+    {
+      "from": "SOC Manager (email marked urgent)",
+      "message": "Can you send me that report? The one from the thing. You know the one. It's for leadership.",
+      "options": ["Which report exactly?", "Attach random spreadsheet", "Stare blankly at screen"]
+    },
+    {
+      "from": "Finance Department (via Email)",
+      "message": "We received a wire transfer request from the CEO. He emailed from ceo.company@gmail.com. Looks legit right?",
+      "options": ["DO NOT PROCESS", "That's not legit", "Finance will fix it later"]
+    },
+    {
+      "from": "CISO (walking over)",
+      "message": "We want to run a phishing simulation! Can you send fake emails pretending to be IT asking for passwords? Don't tell IT though.",
+      "options": ["That's not how this works", "Please submit a request", "I need a drink"]
+    },
+    {
+      "from": "SOC Manager (via Teams)",
+      "message": "My kid needs help with their homework about 'cyber'. Can you explain what a firewall is? In simple terms. For a 6 year old.",
+      "options": ["It's like a security guard", "Send Wikipedia link", "So BPF filters were created in Berkeley, but modern eBPF..."]
+    },
+    {
+    "from": "CISO (walking over)",
+    "message": "Hey, leadership wants to know how this incident could happen? We have ISO 27001.",
+    "options": ["Standards reduce risk","Incidents still happen","It shouldn't. We must have a mole."]
+  }
+  ]
+}
