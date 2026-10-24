@@ -1428,11 +1428,16 @@
                 else if (i === 1) rankClass = 'silver';
                 else if (i === 2) rankClass = 'bronze';
 
-                entry.innerHTML = `
-                    <span class="rank ${rankClass}">${i + 1}</span>
-                    <span class="entry-name">${score.name}</span>
-                    <span class="entry-score">${score.alerts} alerts</span>
-                `;
+                const rankEl = document.createElement('span');
+                rankEl.className = `rank ${rankClass}`;
+                rankEl.textContent = i + 1;
+                const nameEl = document.createElement('span');
+                nameEl.className = 'entry-name';
+                nameEl.textContent = score.name;
+                const scoreEl = document.createElement('span');
+                scoreEl.className = 'entry-score';
+                scoreEl.textContent = `${score.alerts} alerts`;
+                entry.append(rankEl, nameEl, scoreEl);
                 list.appendChild(entry);
             });
         }
@@ -1456,9 +1461,9 @@
                 const el = document.getElementById(elementId);
                 if (!el) return;
                 el.innerHTML = `
-                    <div class="stat-row"><span>Games played</span><span class="stat-val">${stats.totalGames}</span></div>
-                    <div class="stat-row"><span>Unique players</span><span class="stat-val">${stats.uniquePlayers}</span></div>
-                    <div class="stat-row"><span>Avg. alerts</span><span class="stat-val">${stats.averageAlerts}</span></div>
+                    <div class="stat-row"><span>Games played</span><span class="stat-val">${Number(stats.totalGames)}</span></div>
+                    <div class="stat-row"><span>Unique players</span><span class="stat-val">${Number(stats.uniquePlayers)}</span></div>
+                    <div class="stat-row"><span>Avg. alerts</span><span class="stat-val">${Number(stats.averageAlerts)}</span></div>
                 `;
             } catch (e) {}
         }

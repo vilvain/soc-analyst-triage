@@ -64,15 +64,21 @@ const server = http.createServer((req, res) => {
 
     if (req.url === '/scores' && req.method === 'POST') {
         let body = '';
-        req.on('data', chunk => body += chunk);
+        let tooBig = false;
+        req.on('data', chunk => {
+            body += chunk;
+            if (body.length > 2048) { tooBig = true; req.destroy(); }
+        });
         req.on('end', () => {
+            if (tooBig) return;
             try {
                 const newScore = JSON.parse(body);
                 const scores = loadScores();
                 scores.push({
                     name: String(newScore.name).slice(0, 20),
-                    alerts: parseInt(newScore.alerts) || 0,
-                    meters: newScore.meters || {},
+                    alerts: Math.min(Math.max(parseInt(newScore.alerts) || 0, 0), 1000),
+                    meters: Object.fromEntries(['noise', 'damage', 'risk', 'career']
+                        .map(k => [k, Number(newScore.meters?.[k]) || 0])),
                     date: new Date().toISOString()
                 });
                 scores.sort((a, b) => b.alerts - a.alerts);
